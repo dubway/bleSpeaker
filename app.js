@@ -46,13 +46,13 @@ function update(){
 
   if(phone){
     phone.update();
-    sendBrightness(Math.floor(phone.distance)); // send to Processing over OSC
+    sendBrightness(Math.floor(phone.prox)); // send to Processing over OSC
   }
   for(var n in speakers){
     speakers[n].update();
   }
 
-  var tempRSSI = phone ? Math.floor(phone.distance) : 'nada';
+  var tempRSSI = phone ? Math.floor(phone.prox) : 'nada';
   bleno.startAdvertising('s_'+tempRSSI);
 }
 
@@ -84,7 +84,7 @@ function handleSpeaker(p,m){
   }
   var internalRSSI = m.split('_')[1];
   speakers[p.uuid].receiveRSSI( p.rssi , internalRSSI );
-  console.log('distance: '+speakers[p.uuid].distance+' -- phoneDistance: '+speakers[p.uuid].phoneRssi + ' -- delay: '+speakers[p.uuid].delay);
+  console.log('prox: '+Math.floor(speakers[p.uuid].prox)+' -- phoneProx: '+speakers[p.uuid].phoneRssi + ' -- delay: '+speakers[p.uuid].delay);
 }
 
 function handlePhone(p){
@@ -102,7 +102,7 @@ function handlePhone(p){
 function Device(_uuid){
   this.uuid = _uuid;
   this.rssi; // raw rssi from node
-  this.distance = 0; // scaled and smoothed rssi from node (eventually volume)
+  this.prox = 0; // scaled and smoothed rssi from node (eventually volume)
   this.timeStamp = new Date().getTime();
   this.delay = 0;
   this.phoneRssi; // that node's internal rssi from the phone (broadcasted in advertisement)
@@ -112,9 +112,9 @@ Device.prototype.update = function(){
   // smooth the rssi on each interval
   var slide = 60;
   // global = global + ( ( new - global ) / slide );
-  this.distance = this.distance + ( (this.rssi - this.distance) / slide);
-  if(this.distance<0) this.distance = 0;
-  if(this.distance>255) this.distance = 255;
+  this.prox = this.prox + ( (this.rssi - this.prox) / slide);
+  if(this.prox<0) this.prox = 0;
+  if(this.prox>255) this.prox = 255;
 }
 
 Device.prototype.receiveRSSI = function(_rssi, _phoneRssi){
