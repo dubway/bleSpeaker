@@ -84,7 +84,7 @@ function handleSpeaker(p,m){
   }
   var internalRSSI = m.split('_')[1];
   speakers[p.uuid].receiveRSSI( p.rssi , internalRSSI );
-  console.log(speakers[p.uuid].phoneRssi + ' with delay of '+speakers[p.uuid].delay+'ms');
+  console.log('distance: '+speakers[p.uuid].distance+' -- phoneDistance: '+speakers[p.uuid].phoneRssi + ' -- delay: '+speakers[p.uuid].delay);
 }
 
 function handlePhone(p){
