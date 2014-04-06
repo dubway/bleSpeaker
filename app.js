@@ -61,7 +61,6 @@ function start(){
 }
 
 noble.on('discover', function(peripheral){
-  console.log('discovered');
   if(peripheral.advertisement.localName && peripheral.advertisement.localName.indexOf('Andy')>=0){
     var now = new Date().getTime();
     var delay = now-andy_timeStamp;
