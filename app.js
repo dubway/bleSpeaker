@@ -26,7 +26,7 @@ bleno.on('stateChange', function(state) {
 ////////////////////////////////////
 
 function sendBrightness(val){
-  client.send('/rssi', val);
+  client.send('/rssi', val); // to Processing's background brightness
 }
 
 ////////////////////////////////////
@@ -39,21 +39,20 @@ var blue_timeStamp;
 function start(){
   blue_timeStamp = new Date().getTime();
   setInterval(update,delay);
-  noble.startScanning([], true); // start scanning
+  noble.startScanning([], true); // start scanning with repeated UUIDs
 }
 
 function update(){
 
   if(phone){
     phone.update();
-    console.log(phone.distance);
     sendBrightness(Math.floor(phone.distance)); // send to Processing over OSC
   }
   for(var n in speakers){
     speakers[n].update();
   }
 
-  var tempRSSI = phone ? phone.rssi : 'nada';
+  var tempRSSI = phone ? Math.floor(phone.distance) : 'nada';
   bleno.startAdvertising('s_'+tempRSSI);
 }
 
@@ -64,10 +63,10 @@ function update(){
 noble.on('discover', function(peripheral){
   var tag = peripheral.advertisement.localName;
   if(tag && tag.indexOf('s_')===0){
-    handleSpeaker(peripheral,tag);
+    handleSpeaker(peripheral,tag); // tag contains that speaker's internal rssi from the phone
   }
   else if(tag && tag.indexOf('Light')>=0){
-    handPhone(peripheral);
+    handlePhone(peripheral);
   }
 });
 
@@ -83,10 +82,12 @@ function handleSpeaker(p,m){
     speakers[p.uuid] = new Device(p.uuid);
     console.log('found Speaker with UUID --> '+p.uuid);
   }
-  speakers[p.uuid].receiveRSSI( p.rssi , m.split('_')[1] );
+  var internalRSSI = m.split('_')[1];
+  speakers[p.uuid].receiveRSSI( p.rssi , internalRSSI );
+  console.log(speakers[p.uuid].phoneRssi);
 }
 
-function handPhone(p){
+function handlePhone(p){
   if(!phone){
     phone = new Device(p.uuid);
     console.log('found a Phone with UUID --> '+p.uuid);
@@ -100,32 +101,34 @@ function handPhone(p){
 
 function Device(_uuid){
   this.uuid = _uuid;
-  this.rssi;
-  this.distance = 0;
+  this.rssi; // raw rssi from node
+  this.distance = 0; // scaled and smoothed rssi from node (eventually volume)
   this.timeStamp;
-  this.phoneRssi;
+  this.phoneRssi; // that node's internal rssi from the phone (broadcasted in advertisement)
 }
 
 Device.prototype.update = function(){
+  // smooth the rssi on each interval
+  var slide = 60;
   // global = global + ( ( new - global ) / slide );
-  var slide = 100;
   this.distance = this.distance + ( (this.rssi - this.distance) / slide);
   if(this.distance<0) this.distance = 0;
   if(this.distance>255) this.distance = 255;
 }
 
 Device.prototype.receiveRSSI = function(_rssi, _phoneRssi){
-  this.mapRssi(_rssi);
-  if(_phoneRssi!='nada') this.phoneRssi = _phoneRssi;
+  this.mapRssi(_rssi); // this speaker's rssi from that node
+  if(_phoneRssi && _phoneRssi!='nada') this.phoneRssi = _phoneRssi; // the node's internal rssi from the phone
   this.timeStamp = new Date().getTime();
 }
 
 Device.prototype.mapRssi = function(_rssi){
 
-  var temp = Number(_rssi)+100;
+  var temp = Number(_rssi)+100; // bump rssi up to positive number
   if(temp<0) temp = 0;
 
-  temp = Math.pow(10 , (temp/10)) * .02;
+  temp = Math.pow(10 , (temp/10)); // convert from dB to linear
+  temp *= .02; // then scale it
 
   this.rssi = temp;
 }
