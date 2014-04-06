@@ -108,7 +108,7 @@ function Device(_uuid){
 
 Device.prototype.update = function(){
   // global = global + ( ( new - global ) / slide );
-  var slide = 10;
+  var slide = 100;
   this.distance = this.distance + ( (this.rssi - this.distance) / slide);
   if(this.distance<0) this.distance = 0;
   if(this.distance>255) this.distance = 255;
@@ -122,9 +122,10 @@ Device.prototype.receiveRSSI = function(_rssi, _phoneRssi){
 
 Device.prototype.mapRssi = function(_rssi){
 
-  var temp = Number(_rssi);
+  var temp = Number(_rssi)+100;
+  if(temp<0) temp = 0;
 
-  temp = Math.pow(10 , (temp/10)) * 1000000;
+  temp = Math.pow(10 , (temp/10)) * .02;
 
   this.rssi = temp;
 }
