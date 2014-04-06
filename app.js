@@ -84,7 +84,7 @@ function handleSpeaker(p,m){
   }
   var internalRSSI = m.split('_')[1];
   speakers[p.uuid].receiveRSSI( p.rssi , internalRSSI );
-  console.log(speakers[p.uuid].phoneRssi);
+  console.log(speakers[p.uuid].phoneRssi + ' with delay of '+speakers[p.uuid].delay+'ms');
 }
 
 function handlePhone(p){
@@ -103,7 +103,8 @@ function Device(_uuid){
   this.uuid = _uuid;
   this.rssi; // raw rssi from node
   this.distance = 0; // scaled and smoothed rssi from node (eventually volume)
-  this.timeStamp;
+  this.timeStamp = new Date().getTime();
+  this.delay = 0;
   this.phoneRssi; // that node's internal rssi from the phone (broadcasted in advertisement)
 }
 
@@ -119,7 +120,9 @@ Device.prototype.update = function(){
 Device.prototype.receiveRSSI = function(_rssi, _phoneRssi){
   this.mapRssi(_rssi); // this speaker's rssi from that node
   if(_phoneRssi && _phoneRssi!='nada') this.phoneRssi = _phoneRssi; // the node's internal rssi from the phone
-  this.timeStamp = new Date().getTime();
+  var now = new Date().getTime();
+  this.delay = now-this.timeStamp;
+  this.timeStamp = now;
 }
 
 Device.prototype.mapRssi = function(_rssi){
