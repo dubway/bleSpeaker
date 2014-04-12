@@ -10,7 +10,7 @@ const int ledPin = 3;
 const int outputMax = 255;
 const int outputMin = 40;
 
-boolean follow = true;
+boolean follow = false;
 
 ///////////////////////////////////
 ///////////////////////////////////
@@ -44,13 +44,11 @@ void loop() {
 ///////////////////////////////////
 
 void digitalPotWrite(int value) {
-  int mappedValue;
-  if(follow){
-    mappedValue = map(value,0,255,outputMin,outputMax);
+  if(!follow){
+    value = 255-value;
   }
-  else{
-    mappedValue = map(value,0,255,outputMax,outputMin);
-  }
+  
+  int mappedValue = map(value,0,255,outputMin,outputMax);
   
   digitalWrite(slaveSelectPin,LOW);
   SPI.transfer(0);

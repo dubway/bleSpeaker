@@ -157,7 +157,7 @@ function handleSpeaker(p,m){
   }
   var internalRSSI = m.split('_')[1];
   speakers[p.uuid].receiveRSSI( p.rssi , internalRSSI );
-  console.log('prox: '+Math.floor(speakers[p.uuid].prox)+' -- phoneProx: '+speakers[p.uuid].phoneRssi + ' -- delay: '+speakers[p.uuid].delay);
+  //console.log('prox: '+Math.floor(speakers[p.uuid].prox)+' -- phoneProx: '+speakers[p.uuid].phoneRssi + ' -- delay: '+speakers[p.uuid].delay);
 }
 
 function handlePhone(p){
