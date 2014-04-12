@@ -7,6 +7,10 @@ var util = require('util');
 var bleno = require('bleno');
 var noble = require('noble');
 
+var serialport = require("serialport");
+var SerialPort  = serialport.SerialPort;
+var portname, myPort;
+
 var osc = require('node-osc');
 var client = new osc.Client('127.0.0.1', 8080); // the Processing sketch
 
@@ -21,12 +25,80 @@ bleno.on('stateChange', function(state) {
   }
 });
 
+//////////////////////////////
+//////////////////////////////
+//////////////////////////////
+
+function setupSerial(){
+
+  serialport.list(function (error, ports) {
+    if(!error){
+      ports.forEach(function(port) {
+        if(port.manufacturer.indexOf('Arduino')>=0 || port.manufacturer.indexOf('FTDI')>=0){
+          portname = port.comName;
+          console.log(portname);
+        }
+      });
+
+      if(portname){
+        myPort = new SerialPort(portname, { 
+          baudRate: 57600,
+          open: false,
+          parser: serialport.parsers.readline("\r\n")
+        });
+        createHandlers();
+      }
+      else{
+        console.log('NO ARDUINO PORT FOUND');
+      }
+    }
+  });
+}
+
+//////////////////////////////
+//////////////////////////////
+//////////////////////////////
+
+function createHandlers(){
+ 
+  myPort.on('open', function() {
+    console.log('port open');
+    myPort.options.open = true;
+
+    myPort.on('close', function() {
+      console.log('port closed');
+      myPort.options.open = false;
+    });
+
+    myPort.on('error', function(error) {
+      console.log('error on the port, closing it now...');
+      myPort.close();
+    });
+
+    myPort.on('data', function(data){
+      console.log('SERIAL GOT DATA:')
+      console.log(data);
+    });
+  });
+}
+
+//////////////////////////////
+//////////////////////////////
+//////////////////////////////
+
+function serialSend(output) {
+  if (myPort && myPort.options && myPort.options.open) {
+    myPort.write(output+','); // add a comma for parseInt in Arduino
+  }
+}
+
 ////////////////////////////////////
 ////////////////////////////////////
 ////////////////////////////////////
 
 function sendBrightness(val){
-  client.send('/rssi', val); // to Processing's background brightness
+  client.send('/rssi', Math.floor(val)); // to Processing's background brightness
+  serialSend(Math.floor(val));
 }
 
 ////////////////////////////////////
@@ -40,6 +112,7 @@ function start(){
   blue_timeStamp = new Date().getTime();
   setInterval(update,delay);
   noble.startScanning([], true); // start scanning with repeated UUIDs
+  setupSerial();
 }
 
 function update(){
