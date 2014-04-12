@@ -8,9 +8,9 @@ const int slaveSelectPin = 10;
 const int ledPin = 3;
 
 const int outputMax = 255;
-const int outputMin = 40;
+const int outputMin = 80;
 
-boolean follow = false;
+boolean follow = true;
 
 ///////////////////////////////////
 ///////////////////////////////////
@@ -52,7 +52,7 @@ void digitalPotWrite(int value) {
   
   digitalWrite(slaveSelectPin,LOW);
   SPI.transfer(0);
-  SPI.transfer(value);
+  SPI.transfer(mappedValue);
   digitalWrite(slaveSelectPin,HIGH);
   
   analogWrite(ledPin,value);
