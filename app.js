@@ -196,7 +196,7 @@ function Device(_uuid){
 
 Device.prototype.update = function(){
   // smooth the rssi on each interval
-  var slide = 20;
+  var slide = 10;
   // global = global + ( ( new - global ) / slide );
   this.smoothedRssi = this.smoothedRssi + ( (this.rssi - this.smoothedRssi) / slide);
   if(this.smoothedRssi<0) this.smoothedRssi = 0;
