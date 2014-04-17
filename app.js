@@ -112,8 +112,8 @@ function triangulateRSSI(){
     for(var n in speakers){
       total+=speakers[n].smoothedRssi;
     }
-    var myPercentage = Math.floor((phone.smoothedRssi/total)*100);
-    console.log(myPercentage);
+    var myPercentage = Math.floor((phone.smoothedRssi/total)*255);
+    sendBrightness(myPercentage);
   }
 }
 
