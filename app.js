@@ -109,12 +109,12 @@ function triangulateRSSI(){
   var total = 0;
   if(phone){
     total+=phone.smoothedRssi;
+    for(var n in speakers){
+      total+=speakers[n].smoothedRssi;
+    }
+    var myPercentage = Math.floor((phone.smoothedRssi/total)*100);
+    console.log(myPercentage);
   }
-  for(var n in speakers){
-    total+=speakers[n].smoothedRssi;
-  }
-  var myPercentage = Math.floor((phone.smoothedRssi/total)*100);
-  console.log(myPercentage);
 }
 
 ////////////////////////////////////
