@@ -168,7 +168,7 @@ function handleSpeaker(p,m){
     speakers[p.uuid] = new Device(p.uuid);
     console.log('found Speaker with UUID --> '+p.uuid);
   }
-  console.log('SPEAKER');
+  console.log('SPEAKER - '+speakers[p.uuid].delay);
   var internalRSSI = m.split('_')[1];
   speakers[p.uuid].receiveRSSI( p.rssi , internalRSSI );
 }
