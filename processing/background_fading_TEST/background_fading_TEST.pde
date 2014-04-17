@@ -16,8 +16,7 @@ void setup(){
 void draw(){
   background(brightness);
   fill(255-brightness);
-  int percentage = (int)((255/((float)brightness)*100);
-  text(brightness, width/2, height/2);
+  text((int)(((float)brightness/255)*100), width/2, height/2);
 }
 
 void oscEvent(OscMessage theOscMessage) {
