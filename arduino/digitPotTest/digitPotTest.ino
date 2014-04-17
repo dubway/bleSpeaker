@@ -8,9 +8,9 @@ const int slaveSelectPin = 10;
 const int ledPin = 3;
 
 const int outputMax = 255;
-const int outputMin = 80;
+const int outputMin = 50;
 
-boolean follow = true;
+boolean follow = false;
 
 ///////////////////////////////////
 ///////////////////////////////////
