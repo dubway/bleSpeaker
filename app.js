@@ -105,28 +105,41 @@ function sendBrightness(val){
 ////////////////////////////////////
 ////////////////////////////////////
 
-var delay = 100;
-var blue_timeStamp;
+function triangulateRSSI(){
+  var total = 0;
+  if(phone){
+    total+=phone.smoothedRssi;
+  }
+  for(var n in speakers){
+    total+=speakers[n].smoothedRssi;
+  }
+  var myPercentage = Math.floor((phone.smoothedRssi/total)*100);
+  console.log(myPercentage);
+}
+
+////////////////////////////////////
+////////////////////////////////////
+////////////////////////////////////
 
 function start(){
-  blue_timeStamp = new Date().getTime();
-  setInterval(update,delay);
+  setInterval(update, 100);
   noble.startScanning([], true); // start scanning with repeated UUIDs
   setupSerial();
 }
 
 function update(){
 
-  if(phone){
-    phone.update();
-    sendBrightness(Math.floor(phone.prox)); // send to Processing over OSC
-  }
   for(var n in speakers){
     speakers[n].update();
   }
+  if(phone){
+    phone.update();
+  }
 
-  var tempRSSI = phone ? Math.floor(phone.prox) : 'nada';
-  bleno.startAdvertising('s_'+tempRSSI);
+  triangulateRSSI();
+
+  var phoneRSSI = phone ? Math.floor(phone.smoothedRssi) : 'nada';
+  bleno.startAdvertising('s_'+phoneRSSI);
 }
 
 ////////////////////////////////////
@@ -155,9 +168,9 @@ function handleSpeaker(p,m){
     speakers[p.uuid] = new Device(p.uuid);
     console.log('found Speaker with UUID --> '+p.uuid);
   }
+  console.log('SPEAKER');
   var internalRSSI = m.split('_')[1];
   speakers[p.uuid].receiveRSSI( p.rssi , internalRSSI );
-  //console.log('prox: '+Math.floor(speakers[p.uuid].prox)+' -- phoneProx: '+speakers[p.uuid].phoneRssi + ' -- delay: '+speakers[p.uuid].delay);
 }
 
 function handlePhone(p){
@@ -175,7 +188,7 @@ function handlePhone(p){
 function Device(_uuid){
   this.uuid = _uuid;
   this.rssi; // raw rssi from node
-  this.prox = 0; // scaled and smoothed rssi from node (eventually volume)
+  this.smoothedRssi = 0; // scaled and smoothed rssi from node (eventually volume)
   this.timeStamp = new Date().getTime();
   this.delay = 0;
   this.phoneRssi; // that node's internal rssi from the phone (broadcasted in advertisement)
@@ -185,9 +198,9 @@ Device.prototype.update = function(){
   // smooth the rssi on each interval
   var slide = 60;
   // global = global + ( ( new - global ) / slide );
-  this.prox = this.prox + ( (this.rssi - this.prox) / slide);
-  if(this.prox<0) this.prox = 0;
-  if(this.prox>255) this.prox = 255;
+  this.smoothedRssi = this.smoothedRssi + ( (this.rssi - this.smoothedRssi) / slide);
+  if(this.smoothedRssi<0) this.smoothedRssi = 0;
+  if(this.smoothedRssi>255) this.smoothedRssi = 255;
 }
 
 Device.prototype.receiveRSSI = function(_rssi, _phoneRssi){
@@ -199,7 +212,6 @@ Device.prototype.receiveRSSI = function(_rssi, _phoneRssi){
 }
 
 Device.prototype.mapRssi = function(_rssi){
-
   var temp = Number(_rssi)+100; // bump rssi up to positive number
   if(temp<0) temp = 0;
 
