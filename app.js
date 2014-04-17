@@ -107,23 +107,15 @@ function sendBrightness(val){
 
 function triangulateRSSI(){
   var total = 0;
-  var min = 20000;
-  var max = 0;
   if(phone && totalSpeakers>0){
-    if(phone.smoothedRssi>max) max = phone.smoothedRssi;
-    if(phone.smoothedRssi<min) min = phone.smoothedRssi;
+
+    total+=phone.smoothedRssi;
     for(var n in speakers){
-      if(speakers[n].smoothedRssi>max) max = speakers[n].smoothedRssi;
-      if(speakers[n].smoothedRssi<min) min = speakers[n].smoothedRssi;
-    }
-    var scaledRssi = scaler(phone.smoothedRssi,min,max,0,100);
-    total+=scaler(phone.smoothedRssi,min,max,0,100);
-    for(var n in speakers){
-      total+=scaler(speakers[n].smoothedRssi,min,max,0,100);
+      total+=speakers[n].smoothedRssi;
     }
 
-    var myPercentage = Math.floor((scaledRssi/total)*255);
-    sendBrightness(myPercentage);
+    var myPercentage = Math.floor((speakers[n].smoothedRssi/total)*255);
+    sendBrightness(255-myPercentage);
   }
 }
 
@@ -230,7 +222,7 @@ Device.prototype.receiveRSSI = function(_rssi, _phoneRssi){
 }
 
 Device.prototype.mapRssi = function(_rssi){
-  var temp = Number(_rssi)+100; // bump rssi up to positive number
+  var temp = Number(_rssi)+70; // bump rssi up to positive number
   if(temp<0) temp = 0;
 
   temp = Math.pow(10 , (temp/10)); // convert from dB to linear
