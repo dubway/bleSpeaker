@@ -107,14 +107,30 @@ function sendBrightness(val){
 
 function triangulateRSSI(){
   var total = 0;
-  if(phone){
-    total+=phone.smoothedRssi;
+  var min = 20000;
+  var max = 0;
+  if(phone && totalSpeakers>0){
+    if(phone.smoothedRssi>max) max = phone.smoothedRssi;
+    if(phone.smoothedRssi<min) min = phone.smoothedRssi;
     for(var n in speakers){
-      total+=speakers[n].smoothedRssi;
+      if(speakers[n].smoothedRssi>max) max = speakers[n].smoothedRssi;
+      if(speakers[n].smoothedRssi<min) min = speakers[n].smoothedRssi;
     }
-    var myPercentage = Math.floor((phone.smoothedRssi/total)*255);
+    var scaledRssi = scaler(phone.smoothedRssi,min,max,0,100);
+    total+=scaler(phone.smoothedRssi,min,max,0,100);
+    for(var n in speakers){
+      total+=scaler(speakers[n].smoothedRssi,min,max,0,100);
+    }
+
+    var myPercentage = Math.floor((scaledRssi/total)*255);
     sendBrightness(myPercentage);
   }
+}
+
+function scaler(val,preMin,preMax,postMin,postMax){
+  var preDiff = preMax-preMin;
+  var postDiff = postMax-postMin;
+  return (((val-preMin)/preDiff)*postDiff)+postMin;
 }
 
 ////////////////////////////////////
@@ -161,10 +177,12 @@ noble.on('discover', function(peripheral){
 ////////////////////////////////////
 
 var phone;
+var totalSpeakers = 0;
 var speakers = {};
 
 function handleSpeaker(p,m){
   if(!speakers[p.uuid]){
+    totalSpeakers++;
     speakers[p.uuid] = new Device(p.uuid);
     console.log('found Speaker with UUID --> '+p.uuid);
   }
