@@ -111,6 +111,7 @@ function triangulateRSSI(){
 
     total+=phone.smoothedRssi;
     for(var n in speakers){
+      console.log(speakers[n].phoneRssi);
       total+=speakers[n].phoneRssi;
     }
 
@@ -178,7 +179,6 @@ function handleSpeaker(p,m){
     speakers[p.uuid] = new Device(p.uuid);
     console.log('found Speaker with UUID --> '+p.uuid);
   }
-  console.log('SPEAKER - '+speakers[p.uuid].delay);
   var internalRSSI = m.split('_')[1];
   speakers[p.uuid].receiveRSSI( p.rssi , internalRSSI );
 }
@@ -205,30 +205,24 @@ function Device(_uuid){
 }
 
 Device.prototype.update = function(){
-  // smooth the rssi on each interval
   var slide = 10;
   // global = global + ( ( new - global ) / slide );
   this.smoothedRssi = this.smoothedRssi + ( (this.rssi - this.smoothedRssi) / slide);
   if(this.smoothedRssi<0) this.smoothedRssi = 0;
-  //if(this.smoothedRssi>255) this.smoothedRssi = 255;
 }
 
 Device.prototype.receiveRSSI = function(_rssi, _phoneRssi){
   this.mapRssi(_rssi); // this speaker's rssi from that node
   if(_phoneRssi && _phoneRssi!='nada') this.phoneRssi = _phoneRssi; // the node's internal rssi from the phone
+
+  // time stuff
   var now = new Date().getTime();
   this.delay = now-this.timeStamp;
   this.timeStamp = now;
 }
 
 Device.prototype.mapRssi = function(_rssi){
-  var temp = Number(_rssi)+70; // bump rssi up to positive number
-  if(temp<0) temp = 0;
-
-  temp = Math.pow(10 , (temp/10)); // convert from dB to linear
-  temp *= .02; // then scale it
-
-  this.rssi = temp;
+  this.rssi = -1*_rssi;
 }
 
 ////////////////////////////////////
