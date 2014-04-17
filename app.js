@@ -200,7 +200,7 @@ Device.prototype.update = function(){
   // global = global + ( ( new - global ) / slide );
   this.smoothedRssi = this.smoothedRssi + ( (this.rssi - this.smoothedRssi) / slide);
   if(this.smoothedRssi<0) this.smoothedRssi = 0;
-  if(this.smoothedRssi>255) this.smoothedRssi = 255;
+  //if(this.smoothedRssi>255) this.smoothedRssi = 255;
 }
 
 Device.prototype.receiveRSSI = function(_rssi, _phoneRssi){
