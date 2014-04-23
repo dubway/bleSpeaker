@@ -12,10 +12,19 @@ var SerialPort  = serialport.SerialPort;
 var portname, myPort;
 
 var osc = require('node-osc');
-var client = new osc.Client('127.0.0.1', 8080); // the Processing sketch
+var OSC_client = new osc.Client('127.0.0.1', 8080);
+var OSC_server = new osc.Server(8081, '0.0.0.0');
+OSC_server.on('message',function(msg,rinfo){
+  console.log('got an OSC message');
+  console.log(msg);
+});
 
 var myName = 0;
 var nameInterval;
+
+var currentVolume = 0;
+var currentMode = 0;
+var currentLoudness = 0;
 
 bleno.on('stateChange', function(state) {
   console.log('on -> stateChange: ' + state);
@@ -42,7 +51,7 @@ function setupSerial(){
 
       if(portname){
         myPort = new SerialPort(portname, { 
-          baudRate: 57600,
+          baudRate: 9600,
           open: false,
           parser: serialport.parsers.readline("\r\n")
         });
@@ -76,8 +85,16 @@ function createHandlers(){
     });
 
     myPort.on('data', function(data){
-      console.log('SERIAL GOT DATA:')
-      console.log(data);
+      var msg = data.split(',');
+      var type = msg[0];
+      var value = msg[1];
+      if(type==='v'){
+        currentVolume = value;
+      }
+      else if(type==='m'){
+        currentMode = value;
+      }
+      OSC_client.send('/test', currentVolume, currentMode); // send physical input to all speakers over wifi
     });
   });
 }
@@ -86,38 +103,19 @@ function createHandlers(){
 //////////////////////////////
 //////////////////////////////
 
-function serialSend(output) {
+function serialSend(volume,mode,loudness) {
   if (myPort && myPort.options && myPort.options.open) {
-    myPort.write(output+','); // add a comma for parseInt in Arduino
+    var output = "";
+    output += String.fromCharCode(volume);
+    output += String.fromCharCode(mode);
+    output += String.fromCharCode(loudness);
+    myPort.write(output); // add a comma for parseInt in Arduino
   }
 }
 
 ////////////////////////////////////
 ////////////////////////////////////
 ////////////////////////////////////
-
-function sendBrightness(val){
-  client.send('/rssi', Math.floor(val)); // to Processing's background brightness
-  serialSend(Math.floor(val));
-}
-
-////////////////////////////////////
-////////////////////////////////////
-////////////////////////////////////
-
-function triangulateRSSI(){
-  var total = 0;
-  if(phone && totalSpeakers>0){
-
-    total+=phone.smoothedRssi;
-    for(var n in speakers){
-      total+=speakers[n].phoneRssi;
-    }
-
-    var myPercentage = Math.floor((phone.smoothedRssi/total)*255);
-    sendBrightness(myPercentage);
-  }
-}
 
 function scaler(val,preMin,preMax,postMin,postMax){
   var preDiff = preMax-preMin;
@@ -130,24 +128,16 @@ function scaler(val,preMin,preMax,postMin,postMax){
 ////////////////////////////////////
 
 function start(){
-  setInterval(update, 100);
+  setInterval(update, 300);
   noble.startScanning([], true); // start scanning with repeated UUIDs
+  bleno.startAdvertising('bleSpeaker');
   setupSerial();
 }
 
 function update(){
 
-  for(var n in speakers){
-    speakers[n].update();
-  }
-  if(phone){
-    phone.update();
-  }
-
-  triangulateRSSI();
-
-  var phoneRSSI = phone ? Math.floor(phone.smoothedRssi) : 'nada';
-  bleno.startAdvertising('s_'+phoneRSSI);
+  if(speaker) speaker.update();
+  if(phone) phone.update();
 }
 
 ////////////////////////////////////
@@ -156,8 +146,8 @@ function update(){
 
 noble.on('discover', function(peripheral){
   var tag = peripheral.advertisement.localName;
-  if(tag && tag.indexOf('s_')===0){
-    handleSpeaker(peripheral,tag); // tag contains that speaker's internal rssi from the phone
+  if(tag && tag.indexOf('bleSpeaker')>=0){
+    handleSpeaker(peripheral); // tag contains that speaker's internal rssi from the phone
   }
   else if(tag && tag.indexOf('Light')>=0){
     handlePhone(peripheral);
@@ -168,18 +158,14 @@ noble.on('discover', function(peripheral){
 ////////////////////////////////////
 ////////////////////////////////////
 
-var phone;
-var totalSpeakers = 0;
-var speakers = {};
+var phone, speaker;
 
-function handleSpeaker(p,m){
-  if(!speakers[p.uuid]){
-    totalSpeakers++;
-    speakers[p.uuid] = new Device(p.uuid);
+function handleSpeaker(p){
+  if(!speaker){
+    speaker = new Device(p.uuid);
     console.log('found Speaker with UUID --> '+p.uuid);
   }
-  var internalRSSI = m.split('_')[1];
-  speakers[p.uuid].receiveRSSI( p.rssi , internalRSSI );
+  speaker.receiveRSSI( p.rssi );
 }
 
 function handlePhone(p){
@@ -198,9 +184,6 @@ function Device(_uuid){
   this.uuid = _uuid;
   this.rssi; // raw rssi from node
   this.smoothedRssi = 0; // scaled and smoothed rssi from node (eventually volume)
-  this.timeStamp = new Date().getTime();
-  this.delay = 0;
-  this.phoneRssi; // that node's internal rssi from the phone (broadcasted in advertisement)
 }
 
 Device.prototype.update = function(){
@@ -210,17 +193,7 @@ Device.prototype.update = function(){
   if(this.smoothedRssi<0) this.smoothedRssi = 0;
 }
 
-Device.prototype.receiveRSSI = function(_rssi, _phoneRssi){
-  this.mapRssi(_rssi); // this speaker's rssi from that node
-  if(_phoneRssi && _phoneRssi!='nada') this.phoneRssi = _phoneRssi; // the node's internal rssi from the phone
-
-  // time stuff
-  var now = new Date().getTime();
-  this.delay = now-this.timeStamp;
-  this.timeStamp = now;
-}
-
-Device.prototype.mapRssi = function(_rssi){
+Device.prototype.receiveRSSI = function(_rssi){
   this.rssi = -1*_rssi;
 }
 
