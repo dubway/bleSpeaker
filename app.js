@@ -15,8 +15,18 @@ var osc = require('node-osc');
 var OSC_client = new osc.Client('127.0.0.1', 8080);
 var OSC_server = new osc.Server(8081, '0.0.0.0');
 OSC_server.on('message',function(msg,rinfo){
-  console.log('got an OSC message');
-  console.log(msg);
+  if(msg.length>=3){
+
+    currentVolume = msg[1];
+    if(currentVolume<0) currentVolume = 0;
+    else if(currentVolume>50) currentVolume = 50;
+
+    currentMode = msg[2];
+    if(currentMode<0) currentMode = 0;
+    else if(currentMode>3) currentMode = 3;
+
+    updateArduino();
+  }
 });
 
 var myName = 0;
@@ -103,12 +113,12 @@ function createHandlers(){
 //////////////////////////////
 //////////////////////////////
 
-function serialSend(volume,mode,loudness) {
+function updateArduino() {
   if (myPort && myPort.options && myPort.options.open) {
     var output = "";
-    output += String.fromCharCode(volume);
-    output += String.fromCharCode(mode);
-    output += String.fromCharCode(loudness);
+    output += String.fromCharCode(currentVolume);
+    output += String.fromCharCode(currentMode);
+    output += String.fromCharCode(currentLoudness);
     myPort.write(output); // add a comma for parseInt in Arduino
   }
 }

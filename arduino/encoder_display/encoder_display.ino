@@ -1,6 +1,9 @@
 //Import Libraries
 #include <Adafruit_NeoPixel.h>
 #include <Encoder.h>
+#include <SPI.h>
+
+const int slaveSelectPin = 12;
 
 // Pins
 #define PIN 6                // LED - Data in
@@ -16,7 +19,7 @@ Encoder myEnc(encoderPinL, encoderPinR);
 long previousMillis = 0;
 long interval = 4000;
 long oldPosition  = -999;
-int volume = 15;
+int volume = 25;
 boolean on = false;
 
 // Button State
@@ -32,16 +35,18 @@ int red = 0;
 int green = 0;
 int blue = 0;
 
-
 void setup() {
   pinMode(buttonPin, INPUT);
   Serial.begin(9600);
+  
+  // digi-pot stuff
+  SPI.begin();
+  pinMode (slaveSelectPin, OUTPUT);
   
   // LEDs
   strip.begin();
   strip.setBrightness(25);
   display(0);
-  //strip.show();              // Initialize all pixels to 'off'
 }
 
 void loop() {
@@ -52,13 +57,25 @@ void loop() {
   // notice we only write to the LEDs if a value has changed, using display()
   checkKnob();
   checkButton();
+  
+  int tempVal = (int) map(volume,0,maxVolume,0,255);
+  digiPotWrite(tempVal);
 }
 
 void checkSerial(){
-  if(Serial.available()>=2){
+  if(Serial.available()>=3){
     
     int tempVolume = Serial.read();
     int tempMode = Serial.read();
+    int tempLoudness = Serial.read(); // this is for the digi-pot's value
+    
+    if(tempLoudness<0){
+      tempLoudness = 0;
+    }
+    else if(tempLoudness>255){
+      tempLoudness = 255;
+    }
+    //digiPotWrite(tempLoudness);
     
     if(tempMode<totalModes && tempMode>=0 && tempMode!=mode){
       mode = tempMode;
@@ -71,6 +88,13 @@ void checkSerial(){
       display(mode);
     }
   }
+}
+
+void digiPotWrite(int value){
+  digitalWrite(slaveSelectPin,LOW);
+  SPI.transfer(0);
+  SPI.transfer(value);
+  digitalWrite(slaveSelectPin,HIGH);
 }
 
 

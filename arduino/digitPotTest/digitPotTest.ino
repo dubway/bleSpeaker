@@ -4,13 +4,7 @@
 
 #include <SPI.h>
 
-const int slaveSelectPin = 10;
-const int ledPin = 3;
-
-const int outputMax = 255;
-const int outputMin = 50;
-
-boolean follow = false;
+const int slaveSelectPin = 12;
 
 ///////////////////////////////////
 ///////////////////////////////////
@@ -18,12 +12,9 @@ boolean follow = false;
 
 void setup() {
   SPI.begin(); 
-  Serial.begin(57600);
+  Serial.begin(9600);
   
-  pinMode (slaveSelectPin, OUTPUT);
-  pinMode(ledPin,OUTPUT);
-  
-  digitalPotWrite(0);
+  pinMode (slaveSelectPin, OUTPUT);  
 }
 
 ///////////////////////////////////
@@ -31,31 +22,13 @@ void setup() {
 ///////////////////////////////////
 
 void loop() {
-  while(Serial.available()>0){
-    int val = Serial.parseInt();
-    if(val>=0 && val<=255){
-      digitalPotWrite(val);
-    }
+  for(int i=0;i<255;i++){
+    digitalWrite(slaveSelectPin,LOW);
+    SPI.transfer(0);
+    SPI.transfer(i);
+    digitalWrite(slaveSelectPin,HIGH);
+    delay(20);
   }
-}
-
-///////////////////////////////////
-///////////////////////////////////
-///////////////////////////////////
-
-void digitalPotWrite(int value) {
-  if(!follow){
-    value = 255-value;
-  }
-  
-  int mappedValue = map(value,0,255,outputMin,outputMax);
-  
-  digitalWrite(slaveSelectPin,LOW);
-  SPI.transfer(0);
-  SPI.transfer(mappedValue);
-  digitalWrite(slaveSelectPin,HIGH);
-  
-  analogWrite(ledPin,value);
 }
 
 ///////////////////////////////////
