@@ -56,10 +56,7 @@ void loop() {
   // physical input stuff
   // notice we only write to the LEDs if a value has changed, using display()
   checkKnob();
-  checkButton();
-  
-  int tempVal = (int) map(volume,0,maxVolume,0,255);
-  digiPotWrite(tempVal);
+  checkButton();  
 }
 
 void checkSerial(){
@@ -74,8 +71,9 @@ void checkSerial(){
     }
     else if(tempLoudness>255){
       tempLoudness = 255;
+      
     }
-    //digiPotWrite(tempLoudness);
+    digiPotWrite(tempLoudness);
     
     if(tempMode<totalModes && tempMode>=0 && tempMode!=mode){
       mode = tempMode;
@@ -91,9 +89,10 @@ void checkSerial(){
 }
 
 void digiPotWrite(int value){
+  int tempValue = (int)map(value,0,255,0,maxVolume);
   digitalWrite(slaveSelectPin,LOW);
   SPI.transfer(0);
-  SPI.transfer(value);
+  SPI.transfer(tempValue);
   digitalWrite(slaveSelectPin,HIGH);
 }
 

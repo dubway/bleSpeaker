@@ -4,7 +4,7 @@
 
 var util = require('util');
 
-var bleno = require('bleno');
+//var bleno = require('bleno');
 var noble = require('noble');
 
 var serialport = require("serialport");
@@ -36,7 +36,7 @@ var currentVolume = 0;
 var currentMode = 0;
 var currentLoudness = 0;
 
-bleno.on('stateChange', function(state) {
+noble.on('stateChange', function(state) {
   console.log('on -> stateChange: ' + state);
 
   if (state === 'poweredOn') {
@@ -104,6 +104,7 @@ function createHandlers(){
       else if(type==='m'){
         currentMode = value;
       }
+      else console.log(msg);
       OSC_client.send('/test', currentVolume, currentMode); // send physical input to all speakers over wifi
     });
   });
@@ -116,10 +117,10 @@ function createHandlers(){
 function updateArduino() {
   if (myPort && myPort.options && myPort.options.open) {
     var output = "";
-    output += String.fromCharCode(currentVolume);
-    output += String.fromCharCode(currentMode);
-    output += String.fromCharCode(currentLoudness);
+    output += currentLoudness;
+    output += ',';
     myPort.write(output); // add a comma for parseInt in Arduino
+    console.log(currentLoudness);
   }
 }
 
@@ -140,7 +141,7 @@ function scaler(val,preMin,preMax,postMin,postMax){
 function start(){
   setInterval(update, 300);
   noble.startScanning([], true); // start scanning with repeated UUIDs
-  bleno.startAdvertising('bleSpeaker');
+  //bleno.startAdvertising('bleSpeaker');
   setupSerial();
 }
 
@@ -184,6 +185,12 @@ function handlePhone(p){
     console.log('found a Phone with UUID --> '+p.uuid);
   }
   phone.receiveRSSI(p.rssi);
+  currentLoudness = phone.rssi;
+  currentLoudness -= 40;
+  currentLoudness *= 10;
+  if(currentLoudness>255) currentLoudness = 255;
+  if(currentLoudness<0) currentLoudness = 0;
+  updateArduino();
 }
 
 ////////////////////////////////////
