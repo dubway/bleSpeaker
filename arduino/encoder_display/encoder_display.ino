@@ -51,6 +51,7 @@ boolean buttonPressed = false;
 
 unsigned long animationStamp = 0;
 int animationInterval = 2000;
+boolean isAnimating = true;
 
 //////////////////////////////
 //////////////////////////////
@@ -73,6 +74,9 @@ void setup() {
   pinMode(13,OUTPUT);
   digitalWrite(13,LOW);
   
+  float fill = 0;
+  float stepSize = 1;
+  
   while(currentVolume>0){
     updateVolume();
     if((millis()/200)%2==0){
@@ -81,7 +85,20 @@ void setup() {
     else{
       digitalWrite(13,LOW);
     }
+    
+    clear();
+    for(int i = 0; i<17; i++){
+      strip.setPixelColor(i, (int)fill, (int)fill, (int)fill);
+    }
+    strip.show();
+    
+    fill += stepSize;
+    if(fill>255 || fill<0){
+      stepSize*=-1;
+      fill+=stepSize;
+    }
   }
+  initAnimation();
 }
 
 //////////////////////////////
@@ -97,6 +114,7 @@ void loop() {
   checkKnob();
   checkButton();
   updateVolume();
+  updateAnimation();
 }
 
 //////////////////////////////
@@ -230,9 +248,33 @@ void updateVolume(){
 //////////////////////////////
 //////////////////////////////
 
+void updateAnimation(){
+  if(animationStamp+animationInterval>millis()){
+    // show the animation stuff
+    clear();
+    for(int i = 0; i<17; i++){
+      int r = ((int)random(red)/(int)127)*255;
+      int g = ((int)random(green)/(int)127)*255;
+      int b = ((int)random(blue)/(int)127)*255;
+      strip.setPixelColor(i, r, g, b);
+    }
+    strip.show();
+  }
+  else if(isAnimating){
+    showVolumeMeter();
+    isAnimating = false;
+  }
+}
+
+//////////////////////////////
+//////////////////////////////
+//////////////////////////////
+
 void initAnimation(){
   animationStamp = millis();
-  
+  clear();
+  strip.show();
+  isAnimating = true;
 }
 
 //////////////////////////////
@@ -240,31 +282,36 @@ void initAnimation(){
 //////////////////////////////
 
 void display(int a){
-  clear();
   
   // green is NORMAL
-  // blue is FILL
-  // red is FOLLOW
+  // red is FILL
+  // green is FOLLOW
   
   if(a == 0){
-    red = 0;
-    green = 255;
-    blue = 0;
-    initAnimation();
-  }
-  else if(a == 1){
     red = 0;
     green = 0;
     blue = 255;
     initAnimation();
   }
-  else if(a == 2){
+  else if(a == 1){
     red = 255;
     green = 0;
     blue = 0;
     initAnimation();
   }
-  
+  else if(a == 2){
+    red = 0;
+    green = 255;
+    blue = 0;
+    initAnimation();
+  }
+  else if(a<0 && !isAnimating){
+    showVolumeMeter();
+  }
+}
+
+void showVolumeMeter(){
+  clear();
   int pixelAmount = (int)map(totalRotarySteps-currentRotary,0,totalRotarySteps,0,17);
   for(int i = 16; i>=pixelAmount; i--){
     strip.setPixelColor(i, red, green, blue);
