@@ -3,23 +3,26 @@
 #include <Encoder.h>
 #include <SPI.h>
 
-const int slaveSelectPin = 12;
-
-// Pins
-#define PIN 6                // LED - Data in
-const int buttonPin = 7;    // Button - Encoder
-const int encoderPinL = 5;
-const int encoderPinR = 3;
+// green = GROUND
+// gray = GROUND
+// purple = 5V
 
 // LED.Ring
+#define PIN 6               // white
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(16, PIN, NEO_GRB + NEO_KHZ800);
-Encoder myEnc(encoderPinL, encoderPinR);
 
 // Rotary Encoder
+const int buttonPin = 7;   // orange
+const int encoderPinL = 5; // yellow
+const int encoderPinR = 3; // blue
+Encoder myEnc(encoderPinL, encoderPinR);
+
+int totalRotarySteps = 50;
+int currentRotary = 0;
+
 long previousMillis = 0;
 long interval = 4000;
 long oldPosition  = -999;
-int volume = 25;
 boolean on = false;
 
 // Button State
@@ -27,27 +30,60 @@ int buttonPushCounter = 0;   // counter for the number of button presses
 int buttonState = 0;         // current state of the button
 int lastButtonState = 0;     // previous state of the button
 int mode = 0;
-
-const int maxVolume = 50;
-const int totalModes = 4;
+int totalModes = 3;
 
 int red = 0;
 int green = 0;
 int blue = 0;
 
+// stuff for the transistors and BT board
+int downVolumePin = 8;
+int upVolumePin = 9;
+
+int targetVolume = 0;
+int currentVolume = 32;
+const int maxVolume = 32;
+
+const int buttonInterval = 200;
+unsigned long buttonStamp = 0;
+
+boolean buttonPressed = false;
+
+//////////////////////////////
+//////////////////////////////
+//////////////////////////////
+
 void setup() {
   pinMode(buttonPin, INPUT);
   Serial.begin(9600);
   
-  // digi-pot stuff
-  SPI.begin();
-  pinMode (slaveSelectPin, OUTPUT);
-  
   // LEDs
   strip.begin();
   strip.setBrightness(25);
-  display(0);
+  display(0); // MODE 0 is normal speaker mode (ignore RSSI)
+  
+  pinMode(upVolumePin,OUTPUT);
+  pinMode(downVolumePin,OUTPUT);
+  digitalWrite(upVolumePin,HIGH);
+  digitalWrite(downVolumePin,HIGH);
+  
+  pinMode(13,OUTPUT);
+  digitalWrite(13,LOW);
+  
+  while(currentVolume>0){
+    updateVolume();
+    if((millis()/200)%2==0){
+      digitalWrite(13,HIGH);
+    }
+    else{
+      digitalWrite(13,LOW);
+    }
+  }
 }
+
+//////////////////////////////
+//////////////////////////////
+//////////////////////////////
 
 void loop() {
     
@@ -56,103 +92,147 @@ void loop() {
   // physical input stuff
   // notice we only write to the LEDs if a value has changed, using display()
   checkKnob();
-  checkButton();  
+  checkButton();
+  updateVolume();
 }
 
+//////////////////////////////
+//////////////////////////////
+//////////////////////////////
+
 void checkSerial(){
-  if(Serial.available()>=3){
-    
-    int tempVolume = Serial.read();
-    int tempMode = Serial.read();
-    int tempLoudness = Serial.read(); // this is for the digi-pot's value
-    
-    if(tempLoudness<0){
-      tempLoudness = 0;
+  while(Serial.available()>0){
+    int tempTargetVolume = (int) map(Serial.read(),0,255,0,maxVolume);
+    if(mode==1){
+      setTargetVolume(tempTargetVolume);
     }
-    else if(tempLoudness>255){
-      tempLoudness = 255;
-      
-    }
-    digiPotWrite(tempLoudness);
-    
-    if(tempMode<totalModes && tempMode>=0 && tempMode!=mode){
-      mode = tempMode;
-    }
-    
-    if(volume!=tempVolume){
-      updateVolume(tempVolume,false);
-    }
-    else{
-      display(mode);
+    else if(mode==2){
+      setTargetVolume(maxVolume-tempTargetVolume);
     }
   }
 }
 
-void digiPotWrite(int value){
-  int tempValue = (int)map(value,0,255,0,maxVolume);
-  digitalWrite(slaveSelectPin,LOW);
-  SPI.transfer(0);
-  SPI.transfer(tempValue);
-  digitalWrite(slaveSelectPin,HIGH);
-}
-
-
-// ------------------------------------------------------------------- Main Control / Encoder + LED.Ring
+//////////////////////////////
+//////////////////////////////
+//////////////////////////////
 
 void checkButton(){
   buttonState = digitalRead(buttonPin);
-  if (buttonState != lastButtonState) {
-    if (buttonState == HIGH) {
-      buttonPushCounter++;
-    } 
-    else {
-     int tempMode = (mode+1)%totalModes;
-     if(tempMode!=mode){
-       Serial.print("m,");
-       Serial.println(tempMode);
-       display(tempMode);
-     }
-     mode = tempMode;
-    }
+  if (buttonState==LOW && buttonState!=lastButtonState) {
+   int tempMode = (mode+1)%totalModes;
+   if(tempMode!=mode){
+     Serial.print("mode,");
+     Serial.println(tempMode);
+     display(tempMode);
+   }
+   mode = tempMode;
   }
   lastButtonState = buttonState;
 }
+
+//////////////////////////////
+//////////////////////////////
+//////////////////////////////
 
 void checkKnob(){
   long newPosition = myEnc.read();
   unsigned long currentMillis = millis();
   
   if(newPosition != oldPosition && newPosition > oldPosition+1){
-    updateVolume(volume-1,true);
+    updateKnob(currentRotary-1,true);
     oldPosition = newPosition;
   }
   else if(newPosition != oldPosition && newPosition < oldPosition-1){
-    updateVolume(volume+1,true);
+    updateKnob(currentRotary+1,true);
     oldPosition = newPosition;
   }
 }
 
-void updateVolume(int tempVolume,boolean internal){
-  if(tempVolume>maxVolume){
-    tempVolume = maxVolume;
+//////////////////////////////
+//////////////////////////////
+//////////////////////////////
+
+void updateKnob(int tempRotVal,boolean internal){
+  if(tempRotVal>totalRotarySteps){
+    tempRotVal = totalRotarySteps;
   }
-  else if(tempVolume<0){
-    tempVolume = 0;
+  else if(tempRotVal<0){
+    tempRotVal = 0;
   }
-  if(tempVolume!=volume){
+  if(tempRotVal!=currentRotary){
     if(internal){
-      Serial.print("v,");
-      Serial.println(tempVolume);
+      Serial.print("volume,");
+      Serial.println(tempRotVal);
     }
     display(-1); // just update the position, not the color
   }
-  volume = tempVolume;
+  currentRotary = tempRotVal;
 }
 
-/////////   NEO-PIXEL STUFF IS DOWN HERE
+//////////////////////////////
+//////////////////////////////
+//////////////////////////////
+
+void setTargetVolume(int tempTarget){
+  // set the maximum volume to be where the rotary encoder is
+  int tempMaxVolume = (int) map(currentRotary,0,totalRotarySteps,0,maxVolume);
+  if(tempTarget>tempMaxVolume){
+    tempTarget = tempMaxVolume;
+  }
+  targetVolume = tempTarget;
+}
+
+//////////////////////////////
+//////////////////////////////
+//////////////////////////////
+
+void updateVolume(){
+  if(mode==0){
+    targetVolume = map(currentRotary,0,totalRotarySteps,0,maxVolume);
+  }
+  else{
+    int tempMaxVolume = (int) map(currentRotary,0,totalRotarySteps,0,maxVolume);
+    if(targetVolume>tempMaxVolume){
+      targetVolume = tempMaxVolume;
+    }
+  }
+  if(!buttonPressed && currentVolume!=targetVolume){
+    buttonStamp = millis();
+    buttonPressed = true;
+    if(currentVolume<targetVolume){
+      digitalWrite(upVolumePin,LOW);
+      digitalWrite(downVolumePin,HIGH);
+      currentVolume++;
+      if(currentVolume>maxVolume){
+        currentVolume = maxVolume;
+      }
+    }
+    else if(currentVolume>targetVolume){
+      digitalWrite(upVolumePin,HIGH);
+      digitalWrite(downVolumePin,LOW);
+      currentVolume--;
+      if(currentVolume<0){
+        currentVolume = 0;
+      }
+    }
+  }
+  else if(buttonPressed && buttonStamp+buttonInterval<millis()){
+    buttonPressed = false;
+    digitalWrite(upVolumePin,HIGH);
+    digitalWrite(downVolumePin,HIGH);
+  }
+}
+
+//////////////////////////////
+//////////////////////////////
+//////////////////////////////
 
 void display(int a){
   clear();
+  
+  // green is NORMAL
+  // blue is FILL
+  // red is FOLLOW
   
   if(a == 0){
     red = 0;
@@ -166,20 +246,15 @@ void display(int a){
   }
   else if(a == 2){
     red = 255;
-    green = 255;
-    blue = 255;
-  }
-  else if(a == 3){
-    red = 255;
     green = 0;
     blue = 0;
   }
   
-  int volumePixelAmount = (int)map(maxVolume-volume,0,maxVolume,0,17);
-  for(int i = 16; i>=volumePixelAmount; i--){
+  int pixelAmount = (int)map(totalRotarySteps-currentRotary,0,totalRotarySteps,0,17);
+  for(int i = 16; i>=pixelAmount; i--){
     strip.setPixelColor(i, red, green, blue);
   }
-  for(int i = 0; i<volumePixelAmount; i++){
+  for(int i = 0; i<pixelAmount; i++){
     strip.setPixelColor(i, 0, 0, 0);
   }
   

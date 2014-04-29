@@ -25,7 +25,7 @@ OSC_server.on('message',function(msg,rinfo){
     if(currentMode<0) currentMode = 0;
     else if(currentMode>3) currentMode = 3;
 
-    updateArduino();
+    //updateArduino();
   }
 });
 
@@ -116,9 +116,7 @@ function createHandlers(){
 
 function updateArduino() {
   if (myPort && myPort.options && myPort.options.open) {
-    var output = "";
-    output += currentLoudness;
-    output += ',';
+    var output = String.fromCharCode(currentLoudness);
     myPort.write(output); // add a comma for parseInt in Arduino
     console.log(currentLoudness);
   }
@@ -144,6 +142,8 @@ function start(){
   //bleno.startAdvertising('bleSpeaker');
   setupSerial();
 }
+
+var stepSize = 10;
 
 function update(){
 
@@ -184,12 +184,16 @@ function handlePhone(p){
     phone = new Device(p.uuid);
     console.log('found a Phone with UUID --> '+p.uuid);
   }
+
   phone.receiveRSSI(p.rssi);
-  currentLoudness = phone.rssi;
-  currentLoudness -= 40;
-  currentLoudness *= 10;
+
+
+  currentLoudness = Math.floor(phone.rssi);
+  currentLoudness -= 60;
+  currentLoudness *= 13;
   if(currentLoudness>255) currentLoudness = 255;
   if(currentLoudness<0) currentLoudness = 0;
+
   updateArduino();
 }
 
@@ -199,7 +203,7 @@ function handlePhone(p){
 
 function Device(_uuid){
   this.uuid = _uuid;
-  this.rssi; // raw rssi from node
+  this.rssi = 1; // raw rssi from node
   this.smoothedRssi = 0; // scaled and smoothed rssi from node (eventually volume)
 }
 
@@ -211,7 +215,9 @@ Device.prototype.update = function(){
 }
 
 Device.prototype.receiveRSSI = function(_rssi){
-  this.rssi = -1*_rssi;
+  var newVal = -1*_rssi;
+
+  this.rssi = this.rssi + ((newVal-this.rssi) / 10);
 }
 
 ////////////////////////////////////
