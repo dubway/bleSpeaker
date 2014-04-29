@@ -49,6 +49,9 @@ unsigned long buttonStamp = 0;
 
 boolean buttonPressed = false;
 
+unsigned long animationStamp = 0;
+int animationInterval = 2000;
+
 //////////////////////////////
 //////////////////////////////
 //////////////////////////////
@@ -227,6 +230,15 @@ void updateVolume(){
 //////////////////////////////
 //////////////////////////////
 
+void initAnimation(){
+  animationStamp = millis();
+  
+}
+
+//////////////////////////////
+//////////////////////////////
+//////////////////////////////
+
 void display(int a){
   clear();
   
@@ -238,16 +250,19 @@ void display(int a){
     red = 0;
     green = 255;
     blue = 0;
+    initAnimation();
   }
   else if(a == 1){
     red = 0;
     green = 0;
     blue = 255;
+    initAnimation();
   }
   else if(a == 2){
     red = 255;
     green = 0;
     blue = 0;
+    initAnimation();
   }
   
   int pixelAmount = (int)map(totalRotarySteps-currentRotary,0,totalRotarySteps,0,17);
