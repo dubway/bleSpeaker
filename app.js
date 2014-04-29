@@ -7,9 +7,9 @@ var util = require('util');
 //var bleno = require('bleno');
 var noble = require('noble');
 
-var serialport = require("serialport");
-var SerialPort  = serialport.SerialPort;
-var portname, myPort;
+// var serialport = require("serialport");
+// var SerialPort  = serialport.SerialPort;
+// var portname, myPort;
 
 var osc = require('node-osc');
 var OSC_client = new osc.Client('127.0.0.1', 8080);
@@ -140,7 +140,7 @@ function start(){
   setInterval(update, 300);
   noble.startScanning([], true); // start scanning with repeated UUIDs
   //bleno.startAdvertising('bleSpeaker');
-  setupSerial();
+  //setupSerial();
 }
 
 var stepSize = 10;
