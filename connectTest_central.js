@@ -4,7 +4,6 @@
 
 var util = require('util');
 
-var bleno = require('bleno');
 var noble = require('noble');
 
 ////////////////////////////////
@@ -12,18 +11,10 @@ var noble = require('noble');
 ////////////////////////////////
 
 noble.on('stateChange', function(state) {
-  console.log('Noble -> stateChange: ' + state);
+  console.log('Central Only: ' + state);
 
   if(state==='poweredOn'){
   	noble.startScanning([], true);
-  }
-});
-
-bleno.on('stateChange', function(state) {
-	if(state==='poweredOn'){
-  	bleno.startAdvertising('Speaker',['fffffffffffffffffffffffffffffff0'], function(error){
-  		console.log('error on startAdvertising');
-  	});
   }
 });
 

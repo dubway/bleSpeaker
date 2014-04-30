@@ -164,7 +164,7 @@ noble.on('discover', function(peripheral){
     handlePhone(peripheral);
   }
   else{
-    console.log('dont recognize: '+peripheral.advertisement.localName);
+    console.log('dont recognize: '+tag);
   }
 });
 
