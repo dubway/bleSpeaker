@@ -50,36 +50,36 @@ noble.on('stateChange', function(state) {
 
 function setupSerial(){
 
-  // serialport.list(function (error, ports) {
-  //   if(!error){
-  //     ports.forEach(function(port) {
-  //       if(port.manufacturer.indexOf('Arduino')>=0 || port.manufacturer.indexOf('FTDI')>=0){
-  //         portname = port.comName;
-  //       }
-  //     });
+  serialport.list(function (error, ports) {
+    if(!error){
+      ports.forEach(function(port) {
+        if(true){
+          portname = port.comName;
+        }
+      });
 
-  //     if(portname){
-  //       myPort = new SerialPort(portname, { 
-  //         baudRate: 9600,
-  //         open: false,
-  //         parser: serialport.parsers.readline("\r\n")
-  //       });
-  //       createHandlers();
-  //     }
-  //     else{
-  //       console.log('NO ARDUINO PORT FOUND');
-  //     }
-  //   }
-  // });
-
-  var portname = 'dev/ttyACM0';
-
-  myPort = new SerialPort(portname, { 
-    baudRate: 9600,
-    open: false,
-    parser: serialport.parsers.readline("\r\n")
+      if(portname){
+        myPort = new SerialPort(portname, { 
+          baudRate: 9600,
+          open: false,
+          parser: serialport.parsers.readline("\r\n")
+        });
+        createHandlers();
+      }
+      else{
+        console.log('NO ARDUINO PORT FOUND');
+      }
+    }
   });
-  createHandlers();
+
+  // var portname = 'dev/ttyACM0';
+
+  // myPort = new SerialPort(portname, { 
+  //   baudRate: 9600,
+  //   open: false,
+  //   parser: serialport.parsers.readline("\r\n")
+  // });
+  // createHandlers();
 }
 
 //////////////////////////////
