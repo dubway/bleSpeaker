@@ -53,7 +53,7 @@ function setupSerial(){
   serialport.list(function (error, ports) {
     if(!error){
       ports.forEach(function(port) {
-        if(true){
+        if(port.comName.indexOf('Blue')<0){
           portname = port.comName;
         }
       });
@@ -71,15 +71,6 @@ function setupSerial(){
       }
     }
   });
-
-  // var portname = 'dev/ttyACM0';
-
-  // myPort = new SerialPort(portname, { 
-  //   baudRate: 9600,
-  //   open: false,
-  //   parser: serialport.parsers.readline("\r\n")
-  // });
-  // createHandlers();
 }
 
 //////////////////////////////
@@ -199,6 +190,8 @@ function handlePhone(p){
     phone = new Device(p.uuid);
     console.log('found a Phone with UUID --> '+p.uuid);
   }
+
+  console.log(p.rssi);
 
   phone.receiveRSSI(p.rssi);
 
