@@ -77,6 +77,8 @@ void setup() {
   float fill = 0;
   float stepSize = 1;
   
+  Serial.println("going into setup mode");
+  
   while(currentVolume>0){
     updateVolume();
     if((millis()/200)%2==0){
@@ -98,6 +100,7 @@ void setup() {
       fill+=stepSize;
     }
   }
+  Serial.println("calibrated");
   initAnimation();
 }
 
@@ -142,7 +145,7 @@ void checkButton(){
   if (buttonState==LOW && buttonState!=lastButtonState) {
    int tempMode = (mode+1)%totalModes;
    if(tempMode!=mode){
-     Serial.print("mode,");
+     Serial.print("m,");
      Serial.println(tempMode);
      display(tempMode);
    }
@@ -182,7 +185,7 @@ void updateKnob(int tempRotVal,boolean internal){
   }
   if(tempRotVal!=currentRotary){
     if(internal){
-      Serial.print("volume,");
+      Serial.print("v,");
       Serial.println(tempRotVal);
     }
     display(-1); // just update the position, not the color
@@ -201,6 +204,8 @@ void setTargetVolume(int tempTarget){
     tempTarget = tempMaxVolume;
   }
   targetVolume = tempTarget;
+  Serial.print("new target volume: ");
+  Serial.println(targetVolume);
 }
 
 //////////////////////////////

@@ -55,7 +55,6 @@ function setupSerial(){
       ports.forEach(function(port) {
         if(port.manufacturer.indexOf('Arduino')>=0 || port.manufacturer.indexOf('FTDI')>=0){
           portname = port.comName;
-          console.log(portname);
         }
       });
 
@@ -83,6 +82,7 @@ function createHandlers(){
   myPort.on('open', function() {
     console.log('port open');
     myPort.options.open = true;
+    myPort.options.setup = false;
 
     myPort.on('close', function() {
       console.log('port closed');
@@ -104,7 +104,11 @@ function createHandlers(){
       else if(type==='m'){
         currentMode = value;
       }
+      else if(type==='calibrated'){
+        myPort.options.setup = true;
+      }
       else console.log(msg);
+
       OSC_client.send('/test', currentVolume, currentMode); // send physical input to all speakers over wifi
     });
   });
@@ -115,10 +119,9 @@ function createHandlers(){
 //////////////////////////////
 
 function updateArduino() {
-  if (myPort && myPort.options && myPort.options.open) {
+  if (myPort && myPort.options && myPort.options.open && myPort.options.setup) {
     var output = String.fromCharCode(currentLoudness);
     myPort.write(output); // add a comma for parseInt in Arduino
-    console.log(currentLoudness);
   }
 }
 
@@ -140,7 +143,7 @@ function start(){
   setInterval(update, 300);
   noble.startScanning([], true); // start scanning with repeated UUIDs
   bleno.startAdvertising('bleSpeaker');
-  //setupSerial();
+  setupSerial();
 }
 
 var stepSize = 10;
@@ -164,7 +167,7 @@ noble.on('discover', function(peripheral){
     handlePhone(peripheral);
   }
   else{
-    console.log('dont recognize: '+tag);
+    //console.log('dont recognize: '+tag);
   }
 });
 
