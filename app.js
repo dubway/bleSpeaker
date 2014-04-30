@@ -57,7 +57,6 @@ function setupSerial(){
           portname = port.comName;
         }
       });
-
       if(portname){
         myPort = new SerialPort(portname, { 
           baudRate: 9600,
