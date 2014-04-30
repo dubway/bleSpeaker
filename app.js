@@ -72,7 +72,7 @@ function setupSerial(){
   //   }
   // });
 
-  var portname = 'dev/ttyACMO';
+  var portname = 'dev/ttyACM0';
 
   myPort = new SerialPort(portname, { 
     baudRate: 9600,
