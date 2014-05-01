@@ -77,7 +77,7 @@ function updateStuff(){
       },
       onReadRequest: function(offset,callback){
         console.log('read');
-        callback(this.RESULT_SUCCESS, numToBuf(currentVolume) )
+        callback(this.RESULT_SUCCESS, numToBuf(60) )
       }
     });
   }
