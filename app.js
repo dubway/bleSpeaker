@@ -74,8 +74,8 @@ Phone.prototype.receiveRSSI = function(_rssi){
   var newVal = -1*_rssi;
 
   newVal -= 60;
-  newVal *= 13;
-  if(newVal>255) newVal = 255;
+  newVal *= 7;
+  if(newVal>127) newVal = 127;
   if(newVal<0) newVal = 0;
 
   this.rssi = this.rssi + ((newVal-this.rssi) / 10);
@@ -89,24 +89,30 @@ var oscClient = new osc.Client('128.122.151.182', 8001);
 var oscServer = new osc.Server(8001, '0.0.0.0');
 
 oscServer.on("message", function (msg, rinfo) {
-  console.log(msg);
+  console.log('got OSC: '+msg);
   currentMode = msg[1];
   currentVolume = msg[2];
   updateArduino();
 });
 
-function updateOSC(){
-  oscClient.send('/someShit',currentMode,currentVolume);
-}
+var shouldSendOSC = false;
 
 function updateArduino(){
   var RSSI = phone ? phone.rssi : 1;
 
+  console.log('Serial: '+Math.floor(RSSI)+' : '+Math.floor(currentMode)+' : '+Math.floor(currentVolume));
   var string = '';
+
   string += String.fromCharCode( Math.floor(RSSI) );
   string += String.fromCharCode( Math.floor(currentMode) );
   string += String.fromCharCode( Math.floor(currentVolume) );
+
   serialSend(string);
+
+  if(shouldSendOSC){
+    oscClient.send('/someShit',currentMode,currentVolume);
+    shouldSendOSC = false;
+  }
 }
 
 ////////////////////////////////////
@@ -163,11 +169,11 @@ function createHandlers(){
       var value = msg[1];
       if(type==='v'){
         currentVolume = value;
-        updateOSC();
+        shouldSendOSC = true;
       }
       else if(type==='m'){
         currentMode = value;
-        updateOSC();
+        shouldSendOSC = true;
       }
       else if(type==='calibrated'){
         myPort.options.setup = true;
