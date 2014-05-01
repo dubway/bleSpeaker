@@ -98,10 +98,8 @@ oscServer.on("message", function (msg, rinfo) {
 var shouldSendOSC = false;
 
 function updateArduino(){
-  console.log('update ARDUINO');
   var RSSI = phone ? phone.rssi : 1;
 
-  console.log('Serial: '+Math.floor(RSSI)+' : '+Math.floor(currentMode)+' : '+Math.floor(currentVolume));
   var string = '';
 
   string += String.fromCharCode( Math.floor(RSSI) );
@@ -161,7 +159,6 @@ function createHandlers(){
 
     myPort.on('data', function(data){
       var msg = data.split(',');
-      console.log(data);
       var type = msg[0];
       var value = msg[1];
       if(type==='v'){
