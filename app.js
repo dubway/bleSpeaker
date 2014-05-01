@@ -96,7 +96,6 @@ function setupSerial(){
             parser: serialport.parsers.readline("\r\n")
           });
           createHandlers();
-          break;
         }
       });
     }
