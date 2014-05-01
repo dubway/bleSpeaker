@@ -86,7 +86,7 @@ Phone.prototype.receiveRSSI = function(_rssi){
 ////////////////////////////////////
 ////////////////////////////////////
 
-var oscClient = new osc.Client('128.122.155.182', 8000);
+var oscClient = new osc.Client('128.122.6.213', 8000);
 var oscServer = new osc.Server(8001, '0.0.0.0');
 
 oscServer.on("message", function (msg, rinfo) {
