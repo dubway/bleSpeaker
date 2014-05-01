@@ -49,8 +49,7 @@ function handlePhone(p){
 
   phone.receiveRSSI(p.rssi);
 
-  var output = String.fromCharCode( Math.floor(phone.rssi) );
-  serialSend(output);
+  updateArduino();
 }
 
 ////////////////////////////////////
@@ -90,13 +89,27 @@ var oscClient = new osc.Client('128.122.151.182', 8001);
 var oscServer = new osc.Server(8001, '0.0.0.0');
 
 oscServer.on("message", function (msg, rinfo) {
-      console.log("OSC message:");
-      console.log(msg);
+  console.log("OSC message:");
+  currentMode = msg[1];
+  currentVolume = msg[2];
+  updateArduino();
 });
 
 function updateOSC(){
   console.log(currentVolume);
   oscClient.send('/someShit',currentMode,currentVolume);
+}
+
+function updateArduino(){
+  var RSSI = phone ? phone.rssi : 1;
+
+  console.log('sending to arduino');
+
+  var string = '';
+  string += String.fromCharCode( Math.floor(RSSI) );
+  string += String.fromCharCode( Math.floor(currentMode) );
+  string += String.fromCharCode( Math.floor(currentVolume) );
+  serialSend(string);
 }
 
 ////////////////////////////////////

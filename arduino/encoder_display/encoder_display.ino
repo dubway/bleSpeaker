@@ -125,8 +125,16 @@ void loop() {
 //////////////////////////////
 
 void checkSerial(){
-  while(Serial.available()>0){
+  if(Serial.available()>=3){
     int tempTargetVolume = (int) map(Serial.read(),0,255,0,maxVolume);
+    int newMode = Serial.read();
+    if(newMode!=mode){
+      mode = newMode;
+      display(mode);
+    }
+    int newRotaryValue = Serial.read();
+    updateKnob(newRotaryValue,false);
+    
     if(mode==1){
       setTargetVolume(tempTargetVolume);
     }
