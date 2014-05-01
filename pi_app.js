@@ -89,21 +89,17 @@ var oscClient = new osc.Client('128.122.6.213', 8001);
 var oscServer = new osc.Server(8001, '0.0.0.0');
 
 oscServer.on("message", function (msg, rinfo) {
-  console.log("OSC message:");
   currentMode = msg[1];
   currentVolume = msg[2];
   updateArduino();
 });
 
 function updateOSC(){
-  console.log(currentVolume);
   oscClient.send('/someShit',currentMode,currentVolume);
 }
 
 function updateArduino(){
   var RSSI = phone ? phone.rssi : 1;
-
-  console.log('sending to arduino');
 
   var string = '';
   string += String.fromCharCode( Math.floor(RSSI) );
