@@ -73,7 +73,7 @@ function Phone(_uuid){
 Phone.prototype.receiveRSSI = function(_rssi){
   var newVal = -1*_rssi;
 
-  newVal -= 60;
+  newVal -= 30;
   newVal *= 7;
   if(newVal>127) newVal = 127;
   if(newVal<0) newVal = 0;
