@@ -73,8 +73,6 @@ function Phone(_uuid){
 Phone.prototype.receiveRSSI = function(_rssi){
   var newVal = -1*_rssi;
 
-  console.log(newVal);
-
   newVal -= 30;
   newVal *= 5;
   if(newVal>127) newVal = 127;
@@ -91,7 +89,7 @@ var oscClient = new osc.Client('128.122.151.160', 8001);
 var oscServer = new osc.Server(8001, '0.0.0.0');
 
 oscServer.on("message", function (msg, rinfo) {
-  console.log('got OSC: '+msg);
+  //console.log('got OSC: '+msg);
   currentMode = msg[1];
   currentVolume = msg[2];
   updateArduino();
