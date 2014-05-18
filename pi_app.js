@@ -76,7 +76,7 @@ Phone.prototype.receiveRSSI = function(_rssi){
   console.log(newVal);
 
   newVal -= 30;
-  newVal *= 7;
+  newVal *= 5;
   if(newVal>127) newVal = 127;
   if(newVal<0) newVal = 0;
 
