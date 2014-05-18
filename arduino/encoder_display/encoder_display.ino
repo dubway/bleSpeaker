@@ -53,6 +53,12 @@ unsigned long animationStamp = 0;
 int animationInterval = 2000;
 boolean isAnimating = true;
 
+float glow = 0;
+float glowStep = 0;
+
+float animateRotStep = 0.004;
+float animateRot = 0;
+
 //////////////////////////////
 //////////////////////////////
 //////////////////////////////
@@ -132,7 +138,6 @@ void checkSerial(){
     tempTargetVolume = (int) map(tempTargetVolume,0,127,0,maxVolume);
     
     int newMode = Serial.read();
-
     
     int newRotaryValue = Serial.read();
     
@@ -222,8 +227,6 @@ void setTargetVolume(int tempTarget){
     tempTarget = tempMaxVolume;
   }
   targetVolume = tempTarget;
-  Serial.print("new target volume: ");
-  Serial.println(targetVolume);
 }
 
 //////////////////////////////
@@ -274,14 +277,7 @@ void updateVolume(){
 void updateAnimation(){
   if(animationStamp+animationInterval>millis()){
     // show the animation stuff
-    clear();
-    for(int i = 0; i<17; i++){
-      int r = ((int)random(red)/(int)127)*255;
-      int g = ((int)random(green)/(int)127)*255;
-      int b = ((int)random(blue)/(int)127)*255;
-      strip.setPixelColor(i, r, g, b);
-    }
-    strip.show();
+    animate();
   }
   else if(isAnimating){
     showVolumeMeter();
@@ -293,8 +289,99 @@ void updateAnimation(){
 //////////////////////////////
 //////////////////////////////
 
+void animate(){
+  clear();
+  
+  int animateOffset = (sin(animateRot)+1)*2; // sine wave from 0-4;
+  animateRot += animateRotStep;
+  
+  int totalLeds = 17;
+  int thingWidth = 3;
+  
+  glow += glowStep;
+  if(glow>1){
+    glow = 1;
+    glowStep *= -1;
+  }
+  if(glow<0){
+    glow = 0;
+    glowStep *= -1;
+  }
+  
+  if(mode==0){
+    int totalLeds = 17;
+    float r = red;
+    float g = green;
+    float b = blue;
+    for(int i = animateOffset-thingWidth; i<animateOffset; i++){
+      int index = (i+6)%totalLeds;
+      if(index<0){
+        index = (i+6)+totalLeds;
+      }
+      strip.setPixelColor(index, (int)r, (int)g, (int)b);
+    }
+    for(int i = animateOffset+(totalLeds/2)-thingWidth; i<animateOffset+(totalLeds/2); i++){
+      int index = (i+6)%totalLeds;
+      if(i<0){
+        index = (i+6)+totalLeds;
+      }
+      strip.setPixelColor(index, (int)r, (int)g, (int)b);
+    }
+  }
+  else if(mode==1){
+    for(int i = animateOffset-thingWidth; i<animateOffset+thingWidth; i++){
+      int index = i%totalLeds;
+      if(i<0){
+        index = i+totalLeds;
+      }
+      strip.setPixelColor(index, red, green, blue);
+    }
+    int i = animateOffset+totalLeds/2;
+    int index = i;
+    if(i>0){
+      index = i%totalLeds;
+    }
+    else{
+      index = i+totalLeds;
+    }
+    float r = ((float)red) * glow;
+    float g = ((float)green) * glow;
+    float b = ((float)blue) * glow;
+    strip.setPixelColor(index, (int)r, (int)g, (int)b);
+    
+  }
+  else if(mode==2){
+    int count = 0;
+    for(int i = animateOffset-thingWidth; i<animateOffset+thingWidth; i++){
+      int index = i%totalLeds;
+      if(i<0){
+        index = i+totalLeds;
+      }
+      if(count==thingWidth){
+        float r = ((float)red) * glow;
+        float g = ((float)green) * glow;
+        float b = ((float)blue) * glow;
+        strip.setPixelColor(index, (int)r, (int)g, (int)b);
+      }
+      else{
+        strip.setPixelColor(index, red, green, blue);
+      }
+      count++;
+    }
+  }
+  
+  strip.show();
+}
+
+//////////////////////////////
+//////////////////////////////
+//////////////////////////////
+
 void initAnimation(){
   animationStamp = millis();
+  animateRot = 0;
+  glow = 0;
+  glowStep = 0.01;
   clear();
   strip.show();
   isAnimating = true;
